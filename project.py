@@ -189,6 +189,7 @@ def createUser():
     if user is None:
         db.add(newuser)
         db.commit()
+        return newuser.id
     return user.id
 
 
