@@ -36,4 +36,4 @@ In this Python project I created a website and JSON API endpoint for a lit of it
     http://localhost:5000 
 
 
-##Enjoy the Application :)
+## Enjoy the Application :)
