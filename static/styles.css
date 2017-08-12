@@ -5,10 +5,10 @@
 
 h1 {
 	font-family: "Helvetica Neue Light", Roboto, Helvetica, Arial, sans-serif;
-	font-size: 50px;
-	color: #51453B;
-	line-height: 60px;
-	font-weight: 300;
+    font-size: 50px;
+    color: #51453B;
+    line-height: 1px;
+    font-weight: 300;
 }
 
 h2 {
@@ -99,11 +99,10 @@ h3 {
 	background-color: #9FB80A;
 }
 .banner.main {
-	height: 150px;
+	height: 250px;
 	background: url("/static/top-banner.jpg");
-	background-position: right;
 	background-repeat: no-repeat;
-	background-size: cover;
+    background-position: top;
 }
 .banner.menu {
 	height: 150px;
@@ -146,9 +145,11 @@ h3 {
 }
 .creator figcaption {
 	font-size: 14px;
-	color: #7B7573;
-	font-weight: 400;
-	margin-top: -20px;
+    color: #131212;
+    /* font-weight: 400; */
+    /* margin-top: -20px; */
+    text-align: center;
+    margin-top: 10px;
 }
 .flash {
 	background-color: #98FB98;
