@@ -59,6 +59,7 @@
 				<h2>{{category.name}} Items</h2>
 					{% for i in items %}
 							<div class="menu-item ">
+								<h3>{{i.title}}</h3>
 								<h3>{{i.name}}</h3>
 								<p>{{i.description}}</p>
 								<a href='{{url_for('editCatItem', category_id = category.id, catitem_id=i.id ) }}'>Edit</a> | 

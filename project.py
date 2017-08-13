@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from flask import Flask, render_template, request, redirect, abort
-from flask import jsonify, url_for, flash, session, make_response
+from flask import jsonify, url_for, flash, session, make_response, g
 from sqlalchemy import create_engine, asc
 from sqlalchemy.orm import sessionmaker
 from database_setup import Base, Category, CategoryItem, User
@@ -10,9 +10,10 @@ import string
 from oauth2client.client import flow_from_clientsecrets
 from oauth2client.client import FlowExchangeError
 import httplib2
-from flask.ext.httpauth import HTTPBasicAuth
+from flask_httpauth import HTTPBasicAuth
 import json
 import requests
+from functools import wraps
 
 auth = HTTPBasicAuth()
 app = Flask(__name__)
@@ -29,6 +30,17 @@ Base.metadata.bind = engine
 
 DBSession = sessionmaker(bind=engine)
 db = DBSession()
+
+
+def verifyUser(f):
+    @wraps(f)
+    def decorated_function(*args, **Kwargs):
+        if session.get('user_id') is None:
+            flash('You are not unauthorized to do this action , \
+              please login first to be able to do that!')
+            return redirect(url_for('showLogin'))
+        return f(*args, **Kwargs)
+    return decorated_function
 
 
 @app.route('/')
@@ -51,10 +63,12 @@ def createSession():
 
 
 @app.route('/category/<int:category_id>/edit', methods=["GET", "POST"])
+@verifyUser
 def editCategory(category_id):
-    if not verifyUser():
-        return redirect(url_for('showLogin'))
     category = db.query(Category).filter_by(id=category_id).one()
+    if category.user_id != getUserId():
+        flash("You can't edit another user's category!")
+        return redirect(url_for('showCategories'))
     if request.method == "POST":
         category.name = request.form['name']
         category.description = request.form['description']
@@ -63,9 +77,8 @@ def editCategory(category_id):
 
 
 @app.route('/category/<int:category_id>/items', methods=['GET'])
+@verifyUser
 def showItems(category_id):
-    if not verifyUser():
-        return redirect(url_for('showLogin'))
     createSession()
     category = db.query(Category).filter_by(id=category_id).one()
     items = db.query(CategoryItem).filter_by(category_id=category_id)
@@ -82,9 +95,8 @@ def showItemsJSON(category_id):
 
 
 @app.route('/category/<int:category_id>/items/add', methods=['GET', 'POST'])
+@verifyUser
 def addCatItem(category_id):
-    if not verifyUser():
-        return redirect(url_for('showLogin'))
     category = db.query(Category).filter_by(id=category_id).one()
     if request.method == 'POST':
         newItem = CategoryItem(name=request.form['name'],
@@ -102,9 +114,8 @@ def addCatItem(category_id):
 # Edit a Category item
 @app.route('/category/<int:category_id>/Items/<int:catitem_id>/edit',
            methods=['GET', 'POST'])
+@verifyUser
 def editCatItem(category_id, catitem_id):
-    if not verifyUser():
-        return redirect(url_for('showLogin'))
     editedItem = db.query(CategoryItem).filter_by(id=catitem_id).one()
     category = db.query(Category).filter_by(id=category_id).one()
     if request.method == 'POST':
@@ -128,9 +139,8 @@ def editCatItem(category_id, catitem_id):
 # Delete a menu item
 @app.route('/category/<int:category_id>/Items/<int:catitem_id>/delete',
            methods=['GET', 'POST'])
+@verifyUser
 def deleteCatItem(category_id, catitem_id):
-    if not verifyUser():
-        return redirect(url_for('showLogin'))
     itemtodelete = db.query(CategoryItem).filter_by(id=catitem_id).one()
     if request.method == 'POST':
         db.delete(itemtodelete)
@@ -142,10 +152,12 @@ def deleteCatItem(category_id, catitem_id):
 
 
 @app.route('/category/<int:category_id>/delete', methods=["GET", "POST"])
+@verifyUser
 def deleteCategory(category_id):
-    if not verifyUser():
-        return redirect(url_for('showLogin'))
     category = db.query(Category).filter_by(id=category_id).one()
+    if category.user_id != getUserId():
+        flash("You can't delete another user's category!")
+        return redirect(url_for('showCategories'))
     if request.method == "POST":
         db.delete(category)
         db.commit()
@@ -155,16 +167,22 @@ def deleteCategory(category_id):
 
 
 @app.route('/category/add', methods=["POST", "GET"])
+@verifyUser
 def addCategory():
-    if not verifyUser():
-        return redirect(url_for('showLogin'))
     if request.method == "POST":
         category = Category(
-            name=request.form['name'], description=request.form['description'])
+            name=request.form['name'], description=request.form['description'], user_id= getUserId())
         db.add(category)
         db.commit()
         return redirect(url_for('showCategories'))
     return render_template("newCategory.html")
+
+def getUserId():
+    ''' This function returns the userId from the DB so I can use for the 
+        Authorization instead of use the Session Id which is big number '''
+    sessionEmail = session['email']
+    user = db.query(User).filter_by(email = sessionEmail).first()
+    return user.id
 
 
 @app.route('/categories.json')
@@ -347,14 +365,6 @@ def new_user():
     db.commit()
     # , {'Location': url_for('get_user', id = user.id, _external = True)}
     return jsonify({'username': user.username}), 201
-
-
-def verifyUser():
-    if session.get('user_id') is None:
-        flash('You are not unauthorized to do this action , \
-              please login first to be able to do that!')
-        return False
-    return True
 
 
 if __name__ == "__main__":
