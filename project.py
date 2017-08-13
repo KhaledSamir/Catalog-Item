@@ -64,7 +64,7 @@ def createSession():
 @app.route('/category/<int:category_id>/edit', methods=["GET", "POST"])
 @verifyUser
 def editCategory(category_id):
-    category = db.query(Category).filter_by(id=category_id).one()
+    category = db.query(Category).filter_by(id=category_id).one_or_none()
     if category.user_id != getUserId():
         flash("You can't edit another user's category!")
         return redirect(url_for('showCategories'))
@@ -101,7 +101,8 @@ def addCatItem(category_id):
         newItem = CategoryItem(name=request.form['name'],
                                description=request.form['description'],
                                title=request.form['title'],
-                               category_id=category_id)
+                               category_id=category_id,
+                               user_id=getUserId())
         db.add(newItem)
         db.commit()
         flash('Item Created!')
@@ -115,8 +116,11 @@ def addCatItem(category_id):
            methods=['GET', 'POST'])
 @verifyUser
 def editCatItem(category_id, catitem_id):
-    editedItem = db.query(CategoryItem).filter_by(id=catitem_id).one()
-    category = db.query(Category).filter_by(id=category_id).one()
+    editedItem = db.query(CategoryItem).filter_by(id=catitem_id).one_or_none()
+    category = db.query(Category).filter_by(id=category_id).one_or_none()
+    if editedItem.user_id != getUserId():
+        flash("You can't edit Items that you didn't create!")
+        return redirect(url_for('showItems', category_id=category_id))
     if request.method == 'POST':
         if request.form['name']:
             editedItem.name = request.form['name']
@@ -140,7 +144,11 @@ def editCatItem(category_id, catitem_id):
            methods=['GET', 'POST'])
 @verifyUser
 def deleteCatItem(category_id, catitem_id):
-    itemtodelete = db.query(CategoryItem).filter_by(id=catitem_id).one()
+    itemtodelete = db.query(CategoryItem).filter_by(
+        id=catitem_id).one_or_none()
+    if itemtodelete.user_id != getUserId():
+        flash("You can't delete Items that you didn't create!")
+        return redirect(url_for('showItems', category_id=category_id))
     if request.method == 'POST':
         db.delete(itemtodelete)
         db.commit()
@@ -259,7 +267,6 @@ def gconnect():
     if result['issued_to'] != CLIENT_ID:
         response = make_response(
             json.dumps("Token's client ID does not match app's."), 401)
-        print "Token's client ID does not match app's."
         response.headers['Content-Type'] = 'application/json'
         return response
 
@@ -299,7 +306,6 @@ def gconnect():
     output += ' " style = "width: 300px; height: 300px;border-radius: 150px;\
                  -webkit-border-radius: 150px;-moz-border-radius: 150px;"> '
     flash("you are now logged in as %s" % session['username'])
-    print "done!"
     return output
 
 
@@ -351,11 +357,9 @@ def new_user():
     username = request.json.get('username')
     password = request.json.get('password')
     if username is None or password is None:
-        print "missing arguments"
         abort(400)
 
     if db.query(User).filter_by(username=username).first() is not None:
-        print "existing user"
         user = db.query(User).filter_by(username=username).first()
         # , {'Location': url_for('get_user', id = user.id, _external = True)}
         return jsonify({'message': 'user already exists'}), 200
