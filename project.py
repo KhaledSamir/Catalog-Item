@@ -79,7 +79,7 @@ def editCategory(category_id):
 @verifyUser
 def showItems(category_id):
     createSession()
-    category = db.query(Category).filter_by(id=category_id).one()
+    category = db.query(Category).filter_by(id=category_id).one_or_none()
     items = db.query(CategoryItem).filter_by(category_id=category_id)
     return render_template('Items.html',
                            category=category,
@@ -96,7 +96,7 @@ def showItemsJSON(category_id):
 @app.route('/category/<int:category_id>/items/add', methods=['GET', 'POST'])
 @verifyUser
 def addCatItem(category_id):
-    category = db.query(Category).filter_by(id=category_id).one()
+    category = db.query(Category).filter_by(id=category_id).one_or_none()
     if request.method == 'POST':
         newItem = CategoryItem(name=request.form['name'],
                                description=request.form['description'],
@@ -161,7 +161,7 @@ def deleteCatItem(category_id, catitem_id):
 @app.route('/category/<int:category_id>/delete', methods=["GET", "POST"])
 @verifyUser
 def deleteCategory(category_id):
-    category = db.query(Category).filter_by(id=category_id).one()
+    category = db.query(Category).filter_by(id=category_id).one_or_none()
     if category.user_id != getUserId():
         flash("You can't delete another user's category!")
         return redirect(url_for('showCategories'))
@@ -343,7 +343,7 @@ def verify_password(username_or_token, password):
     # Try to see if it's a token first
     user_id = User.verify_auth_token(username_or_token)
     if user_id:
-        user = db.query(User).filter_by(id=user_id).one()
+        user = db.query(User).filter_by(id=user_id).one_or_none()
     else:
         user = db.query(User).filter_by(username=username_or_token).first()
         if not user or not user.verify_password(password):
