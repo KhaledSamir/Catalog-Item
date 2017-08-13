@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-
 from flask import Flask, render_template, request, redirect, abort
 from flask import jsonify, url_for, flash, session, make_response, g
 from sqlalchemy import create_engine, asc
@@ -57,9 +56,9 @@ def showCategories():
 def createSession():
     if session.get('state') is None:
         session['state'] = ''.join(
-                                random.choice(string.ascii_uppercase +
-                                              string.digits)
-                                for x in xrange(32))
+            random.choice(string.ascii_uppercase +
+                          string.digits)
+            for x in xrange(32))
 
 
 @app.route('/category/<int:category_id>/edit', methods=["GET", "POST"])
@@ -171,17 +170,19 @@ def deleteCategory(category_id):
 def addCategory():
     if request.method == "POST":
         category = Category(
-            name=request.form['name'], description=request.form['description'], user_id= getUserId())
+            name=request.form['name'], description=request.form['description'],
+            user_id=getUserId())
         db.add(category)
         db.commit()
         return redirect(url_for('showCategories'))
     return render_template("newCategory.html")
 
+
 def getUserId():
-    ''' This function returns the userId from the DB so I can use for the 
+    ''' This function returns the userId from the DB so I can use for the
         Authorization instead of use the Session Id which is big number '''
-    sessionEmail = session['email']
-    user = db.query(User).filter_by(email = sessionEmail).first()
+    sessionemail = session['email']
+    user = db.query(User).filter_by(email=sessionemail).first()
     return user.id
 
 
