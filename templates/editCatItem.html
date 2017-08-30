@@ -1,0 +1,34 @@
+{% extends "main.html" %}
+{% block content %}
+{% include "header.html" %}
+	<div class="row divider green">
+		<div class="col-md-12"></div>
+	</div>
+	<div class="row banner menu">
+		<div class="col-md-11 col-md-offset-1 padding-none">
+			<h1>Add Category Item</h1>
+		</div>
+	</div>
+	<div class="row">
+		<div class="col-md-6 col-md-offset-1 padding-top">
+			<form action="{{url_for('editCatItem' , category_id = category_id, catitem_id = item.id)}}" method = "POST">
+				<div class="form-group">
+					<label for="name">Title:</label>
+					<input type ="text" maxlength="100" class="form-control" name="title" value="{{item.title}}">
+					<label for="name">Name:</label>
+					<input type ="text" maxlength="100" class="form-control" name="name" value="{{item.name}}">
+
+					<label for="description">Description:</label>
+					<textarea class="form-control" maxlength="250" rows="3" name="description">{{item.description}}</textarea>
+					<div class="padding-bottom"></div>
+					
+					<button type="submit" class="btn btn-default" id="submit">
+					<span class="glyphicon glyphicon-ok" aria-hidden="true"></span>Save</button>
+					<a class="btn btn-default delete" href = '{{url_for('showItems' , category_id = category_id)}}'>
+						<span class="glyphicon glyphicon-remove" aria-hidden="true"></span> Cancel
+					</a>
+				</div>
+			</form>
+		</div>
+	</div>
+{% endblock %}
